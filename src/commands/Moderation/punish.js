@@ -5,6 +5,7 @@ import {
   ButtonBuilder,
   ButtonStyle,
   EmbedBuilder,
+  MessageFlags,
 } from 'discord.js';
 import { logModerationAction, generateCaseId, storeModerationCase } from '../../utils/moderation.js';
 import { logger } from '../../utils/logger.js';
@@ -90,7 +91,7 @@ export default {
 
   async execute(interaction, config, client) {
     try {
-      await interaction.deferReply({ ephemeral: true });
+      await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
       const member = interaction.options.getMember('member');
       const user = interaction.options.getUser('member');
@@ -212,8 +213,11 @@ export default {
       );
 
       // Send to punishment log channel
-      const logChannel = interaction.guild.channels.cache.get(PUNISHMENT_LOG_CHANNEL_ID);
+      let logChannel = interaction.guild.channels.cache.get(PUNISHMENT_LOG_CHANNEL_ID);
       if (!logChannel) {
+        logChannel = await interaction.guild.channels.fetch(PUNISHMENT_LOG_CHANNEL_ID).catch(() => null);
+      }
+      if (!logChannel || !logChannel.isTextBased()) {
         throw new TitanBotError('Log channel not found', ErrorTypes.CONFIGURATION, 'Punishment log channel not found. Please check the channel ID.', { subtype: 'missing_channel' });
       }
 
