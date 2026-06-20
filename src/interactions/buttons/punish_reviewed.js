@@ -2,7 +2,7 @@ import { EmbedBuilder } from 'discord.js';
 import { logger } from '../../utils/logger.js';
 
 const BUTTON_LABELS = {
-  punish_reviewed: '✅ Reviewed by IA/HC',
+  punish_reviewed: '✅ Reviewed by Management',
 };
 
 async function execute(interaction, client) {
