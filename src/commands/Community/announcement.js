@@ -26,6 +26,19 @@ async function saveConfig(client, guildId, config) {
   await setInDb(CONFIG_KEY(guildId), config);
 }
 
+function buildAnnouncementEmbed(title, message, color, image) {
+  const embed = new EmbedBuilder()
+    .setTitle(title)
+    .setDescription(message)
+    .setColor(color);
+
+  if (image) {
+    embed.setImage(image);
+  }
+
+  return embed;
+}
+
 export default {
   data: new SlashCommandBuilder()
     .setName('announcement')
@@ -186,21 +199,14 @@ export default {
           throw new TitanBotError('Channel not found', ErrorTypes.CONFIGURATION, 'Announcement channel not found. Please set it again with `/announcement setchannel`.', { subtype: 'missing_channel' });
         }
 
-        const embed = new EmbedBuilder()
-          .setTitle(`📢 ${title}`)
-          .setDescription(message)
-          .setColor(parseInt(colorStr, 16))
-          .setFooter({ text: `Announced by ${interaction.user.tag}`, iconURL: interaction.user.displayAvatarURL() })
-          .setTimestamp();
+        const embed = buildAnnouncementEmbed(title, message, parseInt(colorStr, 16), image);
 
-        if (image) embed.setImage(image);
+        const announcementPayload = { embeds: [embed] };
+        if (ping === 'everyone') announcementPayload.content = '@everyone';
+        else if (ping === 'here') announcementPayload.content = '@here';
+        else if (ping === 'role' && role) announcementPayload.content = `<@&${role.id}>`;
 
-        let pingContent = '';
-        if (ping === 'everyone') pingContent = '@everyone';
-        else if (ping === 'here') pingContent = '@here';
-        else if (ping === 'role' && role) pingContent = `<@&${role.id}>`;
-
-        await channel.send({ content: pingContent || undefined, embeds: [embed] });
+        await channel.send(announcementPayload);
 
         await InteractionHelper.universalReply(interaction, {
           embeds: [successEmbed('✅ Announcement Sent', `Your announcement has been posted in <#${channel.id}>`)],
@@ -313,10 +319,7 @@ export async function registerSchedule(client, guildId, schedule) {
           || await guild.channels.fetch(schedule.channelId).catch(() => null);
         if (!channel) return;
 
-        const embed = new EmbedBuilder()
-          .setTitle(`📢 ${schedule.title}`)
-          .setDescription(schedule.message)
-          .setColor(0x3498DB)
+        const embed = buildAnnouncementEmbed(`📢 ${schedule.title}`, schedule.message, 0x3498DB)
           .setTimestamp();
 
         let pingContent = '';
