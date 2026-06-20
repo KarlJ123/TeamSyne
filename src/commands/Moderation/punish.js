@@ -214,9 +214,15 @@ export default {
 
       // Send to punishment log channel
       let logChannel = interaction.guild.channels.cache.get(PUNISHMENT_LOG_CHANNEL_ID);
+      logger.info(`Cache lookup: ${logChannel ? logChannel.name : 'not in cache'}`);
       if (!logChannel) {
-        logChannel = await interaction.guild.channels.fetch(PUNISHMENT_LOG_CHANNEL_ID).catch(() => null);
+        logChannel = await interaction.guild.channels.fetch(PUNISHMENT_LOG_CHANNEL_ID).catch((err) => {
+          logger.error(`Fetch failed: ${err.message}`);
+          return null;
+        });
+        logger.info(`Fetch result: ${logChannel ? logChannel.name : 'null'}`);
       }
+      logger.info(`isTextBased: ${logChannel?.isTextBased()}`);
       if (!logChannel || !logChannel.isTextBased()) {
         throw new TitanBotError('Log channel not found', ErrorTypes.CONFIGURATION, 'Punishment log channel not found. Please check the channel ID.', { subtype: 'missing_channel' });
       }
