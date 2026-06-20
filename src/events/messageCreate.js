@@ -49,10 +49,10 @@ async function handleFAQ(message) {
   const faqs = {
     "How do I join team syne": "Create a ticket https://discord.com/channels/1382512078585200642/1396618369209340084",
     "how do i make a ticket": "To join team syne click here https://discord.com/channels/1382512078585200642/1514857141125644429",
-    "what are the rules": "Please check the rules channel for our server rules!",
+    "what are the rules": "Please check the rules channel for our server rules! https://discord.com/channels/1382512078585200642/1382512079486845073",
     "how do i level up": "Send messages in the server to earn XP and level up!",
     "what commands are available": "Type `/` to see all available commands!",
-    "how do i get roles": "Head over to the roles channel and pick the ones you want!",
+    "how do i get roles": "Head over to the roles channel and pick the ones you want! https://discord.com/channels/1382512078585200642/1514096776100053172",
     "who made this bot": "This bot was built with TeamSyne — a powerful all-in-one Discord assistant!",
   };
 
