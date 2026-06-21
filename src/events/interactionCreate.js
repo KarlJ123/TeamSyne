@@ -285,6 +285,23 @@ export default {
             return;
           }
 
+          if (interaction.customId.startsWith('create_ticket_') && !interaction.customId.startsWith('create_ticket_modal')) {
+            // Multi-panel ticket button (create_ticket_PANELID)
+            const button = client.buttons.get('create_ticket_panel');
+            if (button) {
+              try {
+                await button.execute(interaction, client, []);
+              } catch (error) {
+                await handleInteractionError(interaction, error, withTraceContext({
+                  type: 'button',
+                  customId: interaction.customId,
+                  handler: 'ticket_panel'
+                }, interactionTraceContext));
+              }
+            }
+            return;
+          }
+
           if (interaction.customId.startsWith('loa_')) {
             const parts = interaction.customId.split('_');
             const buttonType = `${parts[0]}_${parts[1]}`; // e.g. "loa_approve"
@@ -355,6 +372,23 @@ export default {
             }, interactionTraceContext));
           }
         } else if (interaction.isModalSubmit()) {
+          if (interaction.customId.startsWith('create_ticket_modal_')) {
+            // Multi-panel ticket modal submission
+            const modal = client.buttons.get('create_ticket_modal_panel');
+            if (modal) {
+              try {
+                await modal.execute(interaction, client, []);
+              } catch (error) {
+                await handleInteractionError(interaction, error, withTraceContext({
+                  type: 'modal',
+                  customId: interaction.customId,
+                  handler: 'ticket_panel_modal'
+                }, interactionTraceContext));
+              }
+            }
+            return;
+          }
+
           if (interaction.customId.startsWith('app_modal_')) {
             try {
               await handleApplicationModal(interaction);

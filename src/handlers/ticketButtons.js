@@ -8,6 +8,7 @@ import { InteractionHelper } from '../utils/interactionHelper.js';
 import { checkRateLimit } from '../utils/rateLimiter.js';
 import { replyUserError, ErrorTypes } from '../utils/errorHandler.js';
 import { getTicketPermissionContext } from '../utils/ticketPermissions.js';
+import { getPanels } from '../commands/Ticket/modules/ticket_panels.js';
 
 function escapeHtml(text) {
   if (!text) return '';
@@ -609,9 +610,118 @@ const deleteTicketHandler = {
   }
 };
 
+
+// Handler for multi-panel buttons (create_ticket_PANELID)
+const createPanelTicketHandler = {
+  name: 'create_ticket_panel',
+  async execute(interaction, client) {
+    try {
+      if (!(await ensureGuildContext(interaction))) return;
+
+      const rateLimitKey = `${interaction.user.id}:create_ticket`;
+      const allowed = await checkRateLimit(rateLimitKey, 3, 60000);
+      if (!allowed) {
+        await replyUserError(interaction, { type: ErrorTypes.RATE_LIMIT, message: 'You are creating tickets too quickly. Please wait a minute and try again.' });
+        return;
+      }
+
+      // Extract panel ID from customId (create_ticket_PANELID)
+      const panelId = interaction.customId.replace('create_ticket_', '');
+
+      // Find panel config
+      const panels = await getPanels(interaction.guildId);
+      const panel = panels.find(p => p.panelId === panelId);
+
+      if (!panel) {
+        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'This ticket panel no longer exists. Please contact staff.' });
+        return;
+      }
+
+      const maxTicketsPerUser = panel.maxTicketsPerUser || 3;
+      const { getUserTicketCount } = await import('../services/ticket.js');
+      const currentTicketCount = await getUserTicketCount(interaction.guildId, interaction.user.id);
+
+      if (currentTicketCount >= maxTicketsPerUser) {
+        return await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: `You have reached the maximum number of open tickets (${maxTicketsPerUser}).\n\nPlease close your existing tickets before creating a new one.\n\n**Current Tickets:** ${currentTicketCount}/${maxTicketsPerUser}` });
+      }
+
+      const modal = new ModalBuilder()
+        .setCustomId(`create_ticket_modal_${panelId}`)
+        .setTitle(`Create a ${panel.panelTitle || 'Ticket'}`);
+
+      const reasonInput = new TextInputBuilder()
+        .setCustomId('reason')
+        .setLabel('Why are you creating this ticket?')
+        .setStyle(TextInputStyle.Paragraph)
+        .setPlaceholder('Describe your issue...')
+        .setRequired(true)
+        .setMaxLength(1000);
+
+      modal.addComponents(new ActionRowBuilder().addComponents(reasonInput));
+      await interaction.showModal(modal);
+    } catch (error) {
+      logger.error('Error creating panel ticket modal:', error);
+      if (!interaction.replied && !interaction.deferred) {
+        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'Could not open ticket creation form.' });
+      }
+    }
+  }
+};
+
+const createPanelTicketModalHandler = {
+  name: 'create_ticket_modal_panel',
+  async execute(interaction, client) {
+    try {
+      if (!(await ensureGuildContext(interaction))) return;
+
+      const deferSuccess = await InteractionHelper.safeDefer(interaction, { flags: MessageFlags.Ephemeral });
+      if (!deferSuccess) return;
+
+      // Extract panel ID from customId (create_ticket_modal_PANELID)
+      const panelId = interaction.customId.replace('create_ticket_modal_', '');
+
+      // Find panel config
+      const panels = await getPanels(interaction.guildId);
+      const panel = panels.find(p => p.panelId === panelId);
+
+      if (!panel) {
+        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'This ticket panel no longer exists.' });
+        return;
+      }
+
+      const reason = interaction.fields.getTextInputValue('reason');
+      const categoryId = panel.categoryId || null;
+
+      const result = await createTicket(
+        interaction.guild,
+        interaction.member,
+        categoryId,
+        reason,
+        { staffRoleId: panel.staffRoleId, panelId, panelTitle: panel.panelTitle }
+      );
+
+      if (result.success) {
+        await interaction.editReply({
+          embeds: [successEmbed(
+            'Ticket Created',
+            `Your ticket has been created in ${result.channel}!`
+          )]
+        });
+      } else {
+        await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: result.error || 'Failed to create ticket.' });
+      }
+    } catch (error) {
+      logger.error('Error creating panel ticket:', error);
+      await replyUserError(interaction, { type: ErrorTypes.UNKNOWN, message: 'An error occurred while creating your ticket.' });
+    }
+  }
+};
+
 export default createTicketHandler;
 export { 
-  createTicketModalHandler, 
+  createTicketModalHandler,
+  createPanelTicketHandler,
+  createPanelTicketModalHandler,
   closeTicketModalHandler,
   closeTicketHandler, 
   claimTicketHandler, 
