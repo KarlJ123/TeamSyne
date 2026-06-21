@@ -156,7 +156,7 @@ export async function createTicket(guild, member, categoryId, reason = 'No reaso
     await saveTicketData(guild.id, channel.id, ticketData);
     
     const priorityInfo = PRIORITY_MAP[priority] || PRIORITY_MAP.none;
-    const embedTitle = actualOptions.embedTitle || `Ticket #${ticketNumber} - ${usernameOrTag(member)}`;
+    const embedTitle = actualOptions.embedTitle || `Ticket #${ticketNumber}`;
     const embedDescription = actualOptions.embedDescription ||
       `${member.toString()}, Please wait while a staff member reviews your ticket!\n\n**Reason:** ${reason}\n**Priority:** ${priorityInfo.emoji} ${priorityInfo.label}`;
     
