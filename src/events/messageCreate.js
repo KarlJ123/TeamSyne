@@ -27,7 +27,15 @@ export default {
   name: Events.MessageCreate,
   async execute(message, client) {
     try {
-      if (message.author.bot || !message.guild) return;
+      if (!message.guild) return;
+
+      // Handle sticky BEFORE bot check so non-bot messages trigger repost
+      // But skip if the message author is the bot itself to prevent loops
+      if (!message.author.bot) {
+        await handleSticky(message);
+      }
+
+      if (message.author.bot) return;
 
       logger.debug(`Message received from ${message.author.tag}: ${message.content}`);
 
@@ -41,8 +49,6 @@ export default {
       await handlePrefixCommand(message, client);
 
       await handleLeveling(message, client);
-
-      await handleSticky(message);
     } catch (error) {
       logger.error('Error in messageCreate event:', error);
     }
