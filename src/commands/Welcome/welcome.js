@@ -23,7 +23,7 @@ export default {
           });
 
           const embed = new EmbedBuilder()
-            .setColor(0x2ECC71)
+            .setColor(0xFFFFFF)
             .setDescription(formattedMessage)
             .setFooter({ text: `${member.guild.name} Management` })
             .setTimestamp();
@@ -48,7 +48,7 @@ export default {
 
         if (announcementChannel) {
           const embed = new EmbedBuilder()
-            .setColor(0x2ECC71)
+            .setColor(0xFFFFFF)
             .setDescription(`Welcome to **${member.guild.name}**! We're glad to have you here.\n\nMake sure to check out the rules and grab your roles!`)
             .setFooter({ text: `${member.guild.name} Management` })
             .setTimestamp();
