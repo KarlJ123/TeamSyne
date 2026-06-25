@@ -204,14 +204,15 @@ export default {
       }
 
       // Validate duration format if provided
-      if (durationStr && !parseDuration(durationStr)) {
+      const cleanDuration = durationStr?.trim() || null;
+      if (cleanDuration && !parseDuration(cleanDuration)) {
         throw new TitanBotError('Invalid duration', ErrorTypes.USER_INPUT, 'Invalid duration format. Use formats like `30d`, `7d`, `24h`, `1w`, `30m`.', { subtype: 'invalid_duration' });
       }
 
       // Execute the punishment action
       let actionResults = [];
       if (member) {
-        actionResults = await executePunishmentAction(member, punishmentType, durationStr, interaction.guild);
+        actionResults = await executePunishmentAction(member, punishmentType, cleanDuration, interaction.guild);
       } else {
         actionResults = ['⚠️ Member not found in server — action skipped, log created'];
       }
@@ -225,8 +226,8 @@ export default {
 
       // Calculate expiry if duration provided
       let expiresText = null;
-      if (durationStr) {
-        const ms = parseDuration(durationStr);
+      if (cleanDuration) {
+        const ms = parseDuration(cleanDuration);
         const expiryDate = new Date(now.getTime() + ms);
         expiresText = expiryDate.toLocaleDateString('en-US', {
           weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
@@ -278,9 +279,9 @@ export default {
         });
       }
 
-      if (durationStr) {
+      if (cleanDuration) {
         embed.addFields(
-          { name: 'Active For', value: formatDuration(durationStr), inline: true },
+          { name: 'Active For', value: formatDuration(cleanDuration), inline: true },
           { name: 'Expires', value: expiresText, inline: true },
         );
       } else {
@@ -352,7 +353,7 @@ export default {
           target: `${user.tag} (${user.id})`,
           executor: `${interaction.user.tag} (${interaction.user.id})`,
           reason,
-          duration: durationStr ? formatDuration(durationStr) : 'Permanent',
+          duration: cleanDuration ? formatDuration(cleanDuration) : 'Permanent',
           metadata: {
             userId: user.id,
             moderatorId: interaction.user.id,
@@ -373,7 +374,7 @@ export default {
           target: `${user.tag} (${user.id})`,
           executor: `${interaction.user.tag} (${interaction.user.id})`,
           reason,
-          duration: durationStr ? formatDuration(durationStr) : null,
+          duration: cleanDuration ? formatDuration(cleanDuration) : null,
           caseId: caseCode,
           metadata: {
             userId: user.id,
