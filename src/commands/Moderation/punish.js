@@ -14,9 +14,9 @@ import { handleInteractionError, TitanBotError, ErrorTypes } from '../../utils/e
 import { getFromDb, setInDb } from '../../utils/database.js';
 
 const PUNISHMENT_LOG_CHANNEL_ID = '1517145309015314442';
-const WARNING_ROLE_ID = '1519540353881866404';
-const MUTED_ROLE_ID = '1519537206182809743';
-const SUSPENSION_ROLE_ID = '1519537206182809743';
+const WARNING_ROLE_ID = '1480276327578996747';
+const MUTED_ROLE_ID = '1516865012554141801';
+const SUSPENSION_ROLE_ID = '1516865012554141801';
 
 // Key to store saved roles per user
 const SAVED_ROLES_KEY = (guildId, userId) => `saved_roles_${guildId}_${userId}`;
