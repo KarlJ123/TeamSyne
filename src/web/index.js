@@ -2,26 +2,17 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import express from 'express';
 import session from 'express-session';
-import connectPgSimple from 'connect-pg-simple';
 import authRouter from './routes/auth.js';
 import { createApiRouter } from './routes/api.js';
 import { requireAuthPage } from './middleware/auth.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const publicDir = join(__dirname, 'public');
-const PgSession = connectPgSimple(session);
 
 export function mountDashboard(app, client) {
     app.set('trust proxy', 1);
 
-    const conString = process.env.POSTGRES_URL || process.env.DATABASE_URL;
-
-    const store = conString
-        ? new PgSession({ conString, createTableIfMissing: true })
-        : undefined;
-
     app.use(session({
-        store,
         secret: process.env.SESSION_SECRET || 'titanbot-dashboard-secret-change-me',
         resave: false,
         saveUninitialized: false,
