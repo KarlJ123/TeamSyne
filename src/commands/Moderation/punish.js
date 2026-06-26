@@ -403,18 +403,6 @@ export default {
           .setCustomId(`punish_reviewed_${caseCode}`)
           .setLabel('✅ Reviewed by IA/HC')
           .setStyle(ButtonStyle.Success),
-        new ButtonBuilder()
-          .setCustomId(`punish_processed_${caseCode}`)
-          .setLabel('Department Hub Processed')
-          .setStyle(ButtonStyle.Primary),
-        new ButtonBuilder()
-          .setCustomId(`punish_roster_${caseCode}`)
-          .setLabel('Roles & Roster Updated')
-          .setStyle(ButtonStyle.Danger),
-        new ButtonBuilder()
-          .setCustomId(`punish_rosterlink_${caseCode}`)
-          .setLabel('Roster')
-          .setStyle(ButtonStyle.Secondary),
       );
 
       // Send to punishment log forum channel
