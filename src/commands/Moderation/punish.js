@@ -14,12 +14,51 @@ import { handleInteractionError, TitanBotError, ErrorTypes } from '../../utils/e
 import { getFromDb, setInDb } from '../../utils/database.js';
 
 const PUNISHMENT_LOG_CHANNEL_ID = '1517145309015314442';
-const WARNING_ROLE_ID = '1480276327578996747';
-const MUTED_ROLE_ID = '1516865012554141801';
-const SUSPENSION_ROLE_ID = '1516865012554141801';
+const WARNING_ROLE_ID = '1519540353881866404';
+const MUTED_ROLE_ID = '1519537206182809743';
+const SUSPENSION_ROLE_ID = '1519537206182809743';
 
 // Key to store saved roles per user
 const SAVED_ROLES_KEY = (guildId, userId) => `saved_roles_${guildId}_${userId}`;
+
+// Escalation system
+const OFFENCE_KEY = (guildId, userId) => `offences_${guildId}_${userId}`;
+const OFFENCE_RESET_MS = 60 * 24 * 60 * 60 * 1000; // 60 days
+
+const ESCALATION_LADDER = [
+  { level: 1, label: 'Verbal Warning or Written Warning', types: ['Verbal Warning', 'Written Warning'] },
+  { level: 2, label: 'Mute for 30 minutes', types: ['Mute/Timeout'], duration: '30m' },
+  { level: 3, label: 'Kick OR Extend Mute by 24 hours', types: ['Kick', 'Mute/Timeout'], duration: '24h' },
+  { level: 4, label: 'Temporary Mute for 3 days', types: ['Mute/Timeout'], duration: '3d', auto: true },
+  { level: 5, label: 'Permanent Mute', types: ['Permanent Ban'], auto: true },
+];
+
+async function getOffenceData(guildId, userId) {
+  const data = await getFromDb(OFFENCE_KEY(guildId, userId), { offences: [], lastOffence: null });
+  
+  // Filter out offences older than 60 days
+  const now = Date.now();
+  data.offences = (data.offences || []).filter(o => now - new Date(o.date).getTime() < OFFENCE_RESET_MS);
+  
+  return data;
+}
+
+async function recordOffence(guildId, userId, punishmentType, caseCode) {
+  const data = await getOffenceData(guildId, userId);
+  data.offences.push({
+    type: punishmentType,
+    caseCode,
+    date: new Date().toISOString(),
+  });
+  data.lastOffence = new Date().toISOString();
+  await setInDb(OFFENCE_KEY(guildId, userId), data);
+  return data.offences.length;
+}
+
+function getNextEscalation(offenceCount) {
+  const nextLevel = Math.min(offenceCount + 1, ESCALATION_LADDER.length);
+  return ESCALATION_LADDER[nextLevel - 1];
+}
 
 async function saveAndRemoveRoles(member, guild) {
   try {
@@ -278,6 +317,11 @@ export default {
       }
 
       const caseCode = generateCaseCode();
+
+      // Record offence and get escalation info
+      const offenceCount = await recordOffence(interaction.guild.id, user.id, punishmentType, caseCode);
+      const nextEscalation = getNextEscalation(offenceCount);
+
       const now = new Date();
       const formattedDate = now.toLocaleDateString('en-US', {
         weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
@@ -339,6 +383,12 @@ export default {
         });
       }
 
+      // Add offence tracking info
+      embed.addFields(
+        { name: 'Offence Count', value: `#${offenceCount} (resets after 60 days)`, inline: true },
+        { name: 'Next Escalation', value: offenceCount >= ESCALATION_LADDER.length ? '⚠️ Max level reached — Perm Mute' : `Level ${nextEscalation.level}: ${nextEscalation.label}`, inline: false },
+      );
+
       if (cleanDuration) {
         embed.addFields(
           { name: 'Active For', value: formatDuration(cleanDuration), inline: true },
@@ -362,8 +412,20 @@ export default {
       const buttons = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId(`punish_reviewed_${caseCode}`)
-          .setLabel('✅ Reviewed by Management')
+          .setLabel('✅ Reviewed by IA/HC')
           .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId(`punish_processed_${caseCode}`)
+          .setLabel('Department Hub Processed')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId(`punish_roster_${caseCode}`)
+          .setLabel('Roles & Roster Updated')
+          .setStyle(ButtonStyle.Danger),
+        new ButtonBuilder()
+          .setCustomId(`punish_rosterlink_${caseCode}`)
+          .setLabel('Roster')
+          .setStyle(ButtonStyle.Secondary),
       );
 
       // Send to punishment log forum channel
@@ -431,6 +493,10 @@ export default {
         },
       });
 
+      const nextEscalationText = offenceCount >= ESCALATION_LADDER.length
+        ? '⚠️ This member is at the maximum offence level (Perm Mute).'
+        : `📋 Next escalation (offence #${offenceCount + 1}): **${nextEscalation.label}**`;
+
       await InteractionHelper.universalReply(interaction, {
         embeds: [
           new EmbedBuilder()
@@ -440,7 +506,9 @@ export default {
             .addFields(
               { name: 'Member', value: `<@${user.id}>`, inline: true },
               { name: 'Type', value: punishmentType, inline: true },
+              { name: 'Offence Count', value: `#${offenceCount}`, inline: true },
               { name: 'Reason', value: reason, inline: false },
+              { name: 'Escalation Info', value: nextEscalationText, inline: false },
             )
             .setTimestamp(),
         ],
