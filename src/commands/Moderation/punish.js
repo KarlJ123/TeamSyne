@@ -401,7 +401,7 @@ export default {
       const buttons = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId(`punish_reviewed_${caseCode}`)
-          .setLabel('✅ Reviewed by IA/HC')
+          .setLabel('✅ Reviewed by Management')
           .setStyle(ButtonStyle.Success),
       );
 
