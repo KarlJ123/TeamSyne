@@ -15,6 +15,15 @@ function getOAuthURL(state) {
     return `https://discord.com/api/oauth2/authorize?${params}`;
 }
 
+router.get('/debug', (req, res) => {
+    res.json({
+        CLIENT_ID: process.env.CLIENT_ID,
+        DASHBOARD_URL: process.env.DASHBOARD_URL,
+        redirect_uri: process.env.DASHBOARD_URL + '/auth/callback',
+        full_url: getOAuthURL('test'),
+    });
+});
+
 router.get('/login', (req, res) => {
     const state = Math.random().toString(36).slice(2);
     req.session.oauthState = state;
