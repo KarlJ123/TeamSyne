@@ -12,6 +12,8 @@ const publicDir = join(__dirname, 'public');
 const PgSession = connectPgSimple(session);
 
 export function mountDashboard(app, client) {
+    app.set('trust proxy', 1);
+
     const conString = process.env.POSTGRES_URL || process.env.DATABASE_URL;
 
     const store = conString
