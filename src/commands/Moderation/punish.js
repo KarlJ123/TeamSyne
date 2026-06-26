@@ -16,7 +16,7 @@ import { scheduleRoleRemoval } from '../../services/punishmentScheduler.js';
 
 const PUNISHMENT_LOG_CHANNEL_ID = '1517145309015314442';
 const WARNING_ROLE_ID = '1519540353881866404';
-const MUTED_ROLE_ID = '1519537206182809743';
+const MUTED_ROLE_ID = '1516865012554141801';
 const SUSPENSION_ROLE_ID = '1519537206182809743';
 
 // Key to store saved roles per user
@@ -63,9 +63,10 @@ function getNextEscalation(offenceCount) {
 
 async function saveAndRemoveRoles(member, guild) {
   try {
-    // Get all roles except @everyone and bot-managed roles
+    // Get all roles except @everyone, bot-managed roles, and punishment roles
+    const EXCLUDED_ROLES = [MUTED_ROLE_ID, SUSPENSION_ROLE_ID, WARNING_ROLE_ID];
     const rolesToSave = member.roles.cache
-      .filter(r => r.id !== guild.id && !r.managed)
+      .filter(r => r.id !== guild.id && !r.managed && !EXCLUDED_ROLES.includes(r.id))
       .map(r => r.id);
 
     if (rolesToSave.length === 0) return;
@@ -403,6 +404,7 @@ export default {
           .setCustomId(`punish_reviewed_${caseCode}`)
           .setLabel('✅ Reviewed by Management')
           .setStyle(ButtonStyle.Success),
+
       );
 
       // Send to punishment log forum channel
