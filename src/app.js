@@ -296,20 +296,13 @@ class TitanBot extends Client {
     try {
       this.player = new Player(this, { skipFFmpeg: false });
 
-      // Load all default extractors except YouTube, then register YouTube separately with cookies
-      const extractorPkg = await import('@discord-player/extractor');
-      const YoutubeExtractor = extractorPkg.YoutubeExtractor ?? extractorPkg.default?.YoutubeExtractor;
-
+      // Load all default extractors except YouTube (which breaks on server IPs)
       await this.player.extractors.loadDefault((ext) => ext !== 'YoutubeExtractor');
 
-      if (YoutubeExtractor) {
-        const ytOptions = {};
-        if (process.env.YOUTUBE_COOKIE) {
-          ytOptions.cookie = process.env.YOUTUBE_COOKIE;
-          startupLog('YouTube cookies loaded from YOUTUBE_COOKIE env var');
-        }
-        await this.player.extractors.register(YoutubeExtractor, ytOptions);
-      }
+      // Register Youtubei extractor — uses YouTube's internal Innertube API, not scraping
+      const { YoutubeiExtractor } = await import('discord-player-youtubei');
+      await this.player.extractors.register(YoutubeiExtractor, {});
+      startupLog('YouTube (Youtubei) extractor registered');
 
       startupLog(`✅ Music player initialized (${this.player.extractors.size} extractors)`);
     } catch (error) {

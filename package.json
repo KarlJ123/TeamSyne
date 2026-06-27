@@ -21,6 +21,7 @@
     "axios": "^1.15.2",
     "connect-pg-simple": "^10.0.0",
     "discord-player": "^6.7.1",
+    "discord-player-youtubei": "^2.0.0",
     "discord.js": "^14.26.4",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
@@ -32,7 +33,7 @@
     "pg": "^8.11.3",
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0",
-    "youtube-ext": "^1.1.25",
+    "youtubei.js": "^17.2.0",
     "zod": "^3.25.76"
   },
   "engines": {
