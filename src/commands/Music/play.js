@@ -49,7 +49,19 @@ export default {
         }
 
         const player = useMainPlayer();
-        const query = interaction.options.getString('query', true);
+        let query = interaction.options.getString('query', true);
+
+        // Strip YouTube Mix/radio params — extractor can't handle start_radio or RD* playlists
+        try {
+            const url = new URL(query);
+            const list = url.searchParams.get('list') ?? '';
+            if (url.hostname.includes('youtube.com') && (url.searchParams.get('start_radio') || list.startsWith('RD'))) {
+                url.searchParams.delete('list');
+                url.searchParams.delete('start_radio');
+                url.searchParams.delete('pp');
+                query = url.toString();
+            }
+        } catch { /* not a URL, leave as-is */ }
 
         try {
             const { track } = await player.play(voiceChannel, query, {
