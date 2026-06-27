@@ -584,7 +584,7 @@ export async function handleApplicationReviewModal(interaction) {
     if (!customId.startsWith('app_review_')) return;
     
     const [, appId, action] = customId.split('_');
-    const reason = interaction.fields.getTextInputValue('reason') || 'No reason provided.';
+    const reason = interaction.fields.getTextInputValue('review_reason') || 'No reason provided.';
     const isApprove = action === 'approve';
     
     try {
