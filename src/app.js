@@ -1,7 +1,8 @@
 import 'dotenv/config';
 import { Client, Collection, GatewayIntentBits } from 'discord.js';
 import { Player } from 'discord-player';
-import { DefaultExtractors } from '@discord-player/extractor';
+import extractorPkg from '@discord-player/extractor';
+const { DefaultExtractors } = extractorPkg;
 import { REST } from '@discordjs/rest';
 import express from 'express';
 import cron from 'node-cron';
