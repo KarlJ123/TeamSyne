@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { useMainPlayer } from 'discord-player';
 import { createEmbed } from '../../utils/embeds.js';
+import { logger } from '../../utils/logger.js';
 
 export default {
     category: 'Music',
@@ -82,12 +83,11 @@ export default {
 
             await interaction.editReply({ embeds: [embed] });
         } catch (error) {
+            logger.error('Music play error:', { message: error.message, stack: error.stack });
             await interaction.editReply({
                 embeds: [createEmbed({
                     title: '❌ Playback Error',
-                    description: error.message?.includes('not found') || error.message?.includes('No result')
-                        ? 'No results found for that query. Try a different search or paste a direct URL.'
-                        : `Failed to play track: ${error.message}`,
+                    description: `\`\`\`${error.message ?? 'Unknown error'}\`\`\``,
                     color: 'error',
                 })],
             });
