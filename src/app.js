@@ -1,6 +1,5 @@
 import 'dotenv/config';
 import { Client, Collection, GatewayIntentBits } from 'discord.js';
-import { Player } from 'discord-player';
 import { REST } from '@discordjs/rest';
 import express from 'express';
 import cron from 'node-cron';
@@ -75,9 +74,6 @@ class TitanBot extends Client {
       await loadCommands(this);
       startupLog(`Commands loaded: ${this.commands.size}`);
       
-      startupLog('Initializing music player...');
-      await this.initializePlayer();
-
       startupLog('Loading handlers...');
       await this.loadHandlers();
       startupLog('Handlers loaded');
@@ -289,24 +285,6 @@ class TitanBot extends Client {
       } catch (error) {
         logger.error(`Error updating counters for guild ${guildId}:`, error);
       }
-    }
-  }
-
-  async initializePlayer() {
-    try {
-      this.player = new Player(this, { skipFFmpeg: false });
-
-      // Load all default extractors except YouTube (which breaks on server IPs)
-      await this.player.extractors.loadDefault((ext) => ext !== 'YoutubeExtractor');
-
-      // Register Youtubei extractor — uses YouTube's internal Innertube API, not scraping
-      const { YoutubeiExtractor } = await import('discord-player-youtubei');
-      await this.player.extractors.register(YoutubeiExtractor, {});
-      startupLog('YouTube (Youtubei) extractor registered');
-
-      startupLog(`✅ Music player initialized (${this.player.extractors.size} extractors)`);
-    } catch (error) {
-      logger.warn('Music player failed to initialize — music commands will be unavailable:', error.message);
     }
   }
 
