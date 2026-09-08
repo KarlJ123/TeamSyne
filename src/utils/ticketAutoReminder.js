@@ -1,33 +1,28 @@
 /**
- * Ticket Auto-Reminder module for Syne (discord.js v14)
- * -------------------------------------------------------
+ * Ticket Auto-Reminder module for Syne (discord.js v14, ESM)
+ * -------------------------------------------------------------
  * Sends an automatic message in a ticket channel if no one with the
  * staff role has replied within a configured time window.
  *
+ * PLACE THIS FILE IN: src/utils/ticketAutoReminder.js
+ * (NOT in src/events — your event loader auto-registers every file
+ * in that folder as a client event, and this module doesn't match
+ * that shape.)
+ *
  * HOW IT WORKS
- * 1. When a ticket channel is opened, call startTicketTimer(channel).
- * 2. Every message sent in that channel is checked in messageCreate.
- *    - If the author has the staff role, the timer is cancelled
- *      (staff has responded, no reminder needed).
+ * 1. When a ticket channel is opened (wherever that code lives —
+ *    likely ticketButtons.js), call startTicketTimer(channel).
+ * 2. Import handleMessage into your messageCreate event file and
+ *    call it for every message.
+ *    - If the author has the staff role, the timer is cancelled.
  * 3. If REMINDER_DELAY_MS passes with no staff message, a reminder
  *    is posted in the channel automatically.
- * 4. When the ticket is closed, call clearTicketTimer(channel.id)
- *    to clean up.
- *
- * INTEGRATION
- * - Import { startTicketTimer, clearTicketTimer, handleMessage } into
- *   your main bot file.
- * - Call startTicketTimer(channel) right after you create a ticket
- *   channel.
- * - Call handleMessage(message) inside your existing messageCreate
- *   event listener.
- * - Call clearTicketTimer(channel.id) wherever you close/delete a
- *   ticket.
+ * 4. When the ticket is closed, call clearTicketTimer(channel.id).
  */
 
 // ---------------- CONFIG ----------------
-const STAFF_ROLE_ID = "1546638542829125710";
-const REMINDER_DELAY_MS = 15 * 1000; // 15 seconds — for testing
+const STAFF_ROLE_ID = "1503557152080658445";
+const REMINDER_DELAY_MS = 15 * 1000; // currently set for testing (15s) — change to e.g. 10 * 60 * 1000 for production
 const REMINDER_MESSAGE =
   "⏰ Tickets will not be answered any time after 12:00 AM EST ANY DAY. Please wait until 12 PM EST for any reponses. Thank you for your patience!";
 
@@ -40,12 +35,11 @@ const activeTickets = new Map();
  * @param {import('discord.js').TextChannel} channel
  */
 export function startTicketTimer(channel) {
-  // Clear any existing timer for this channel first (avoid duplicates)
-  clearTicketTimer(channel.id);
+  clearTicketTimer(channel.id); // avoid duplicate timers
 
   const timeout = setTimeout(async () => {
     const ticket = activeTickets.get(channel.id);
-    if (!ticket || ticket.staffReplied) return; // staff already responded
+    if (!ticket || ticket.staffReplied) return;
 
     try {
       await channel.send(REMINDER_MESSAGE);
@@ -60,8 +54,7 @@ export function startTicketTimer(channel) {
 }
 
 /**
- * Stop tracking a ticket (call on ticket close, or after a reminder
- * has already been handled).
+ * Stop tracking a ticket (call on ticket close).
  * @param {string} channelId
  */
 export function clearTicketTimer(channelId) {
@@ -73,7 +66,7 @@ export function clearTicketTimer(channelId) {
 }
 
 /**
- * Call this inside your existing messageCreate listener for every
+ * Call this inside your messageCreate event's execute() for every
  * message. It only acts on channels currently being tracked.
  * @param {import('discord.js').Message} message
  */
@@ -86,6 +79,6 @@ export function handleMessage(message) {
   const isStaff = message.member?.roles.cache.has(STAFF_ROLE_ID);
   if (isStaff) {
     ticket.staffReplied = true;
-    clearTicketTimer(message.channel.id); // staff responded, cancel reminder
+    clearTicketTimer(message.channel.id);
   }
 }
