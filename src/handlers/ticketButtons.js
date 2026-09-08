@@ -9,6 +9,7 @@ import { checkRateLimit } from '../utils/rateLimiter.js';
 import { replyUserError, ErrorTypes } from '../utils/errorHandler.js';
 import { getTicketPermissionContext } from '../utils/ticketPermissions.js';
 import { getPanels } from '../commands/Ticket/modules/ticket_panels.js';
+import { startTicketTimer, clearTicketTimer } from '../utils/ticketAutoReminder.js';
 
 function escapeHtml(text) {
   if (!text) return '';
@@ -172,6 +173,7 @@ const createTicketModalHandler = {
       );
       
       if (result.success) {
+        startTicketTimer(result.channel);
         await interaction.editReply({
           embeds: [successEmbed(
             'Ticket Created',
@@ -272,6 +274,7 @@ const closeTicketModalHandler = {
       const result = await closeTicket(interaction.channel, interaction.user, reason);
 
       if (result.success) {
+        clearTicketTimer(interaction.channel.id);
         await interaction.editReply({
           embeds: [successEmbed('Ticket Closed', 'This ticket has been closed.')],
           flags: MessageFlags.Ephemeral
@@ -589,6 +592,7 @@ const reopenTicketHandler = {
       const result = await reopenTicket(interaction.channel, interaction.member);
       
       if (result.success) {
+        startTicketTimer(interaction.channel);
         let reopenMessage = 'You have successfully reopened this ticket!';
         if (result.openCategoryMoveFailed) {
           reopenMessage += '\n\n⚠️ The ticket was reopened, but it could not be moved to the configured open ticket category.';
@@ -644,6 +648,7 @@ const deleteTicketHandler = {
       const result = await deleteTicket(interaction.channel, interaction.member);
       
       if (result.success) {
+        clearTicketTimer(interaction.channel.id);
         await interaction.editReply({
           embeds: [successEmbed('Ticket Deleted', 'This ticket will be permanently deleted in 3 seconds.')],
           flags: MessageFlags.Ephemeral
@@ -765,6 +770,7 @@ const createPanelTicketModalHandler = {
       );
 
       if (result.success) {
+        startTicketTimer(result.channel);
         await interaction.editReply({
           embeds: [successEmbed(
             'Ticket Created',

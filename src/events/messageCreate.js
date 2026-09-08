@@ -19,6 +19,7 @@ import {
 } from '../services/countingGameService.js';
 import { getSticky, saveSticky } from '../commands/Utility/sticky.js';
 import { EmbedBuilder } from 'discord.js';
+import { handleMessage as handleTicketReminder } from '../utils/ticketAutoReminder.js';
 
 const MESSAGE_XP_RATE_LIMIT_ATTEMPTS = 12;
 const MESSAGE_XP_RATE_LIMIT_WINDOW_MS = 10000;
@@ -36,6 +37,9 @@ export default {
       }
 
       if (message.author.bot) return;
+
+      // No-ops unless this channel is a tracked ticket awaiting a staff reply
+      handleTicketReminder(message);
 
       logger.debug(`Message received from ${message.author.tag}: ${message.content}`);
 
